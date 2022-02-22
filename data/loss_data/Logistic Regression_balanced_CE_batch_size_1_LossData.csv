@@ -1,0 +1,2 @@
+,Epoch,TrainingLoss,ValidationLoss,ValidationDiceLoss,AUC_ROC,AUC_PR,TrainingTime
+0,0,0,-1,0,0,0,0.0

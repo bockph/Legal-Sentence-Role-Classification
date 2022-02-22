@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Legal Sentence Role Classifier</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.9.0.min.js"></script>
+    <link rel="stylesheet" type="text/css"
+          href="https://bootstrap-table.com/docs/extensions/filter-control/bootstrap-table-filter-control.css">
+</head>
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h1> Legal Sentence Segmenter & Role Classifier</h1>
+    </div>
+    <div class="form-group">
+        <label for="document_text">Veteran Appeals Document to be parsed:</label>
+        <textarea class="form-control" id="document_text" rows="8">Paste your Document here....</textarea>
+    </div>
+    <br>
+    <button class="btn btn-success" onclick="performEval()"> Perform Evaluation</button>
+    <br>
+    <div id="histo" style="   margin: auto;width:1000px;height:400px;"></div>
+
+
+    <hr style="width:100%;text-align:left;margin-left:0">
+    <h1>Select Rhetorical Roles</h1>
+
+    <div id="bulk_result" style="display: grid; grid-template-columns: repeat(7, 1fr); grid-gap: 10px;">
+        <div id="All" data-role="fieldcontain">
+            <label for="All">All</label>
+            <input id="All" name="remember" type="radio" onclick="filter('All')"/>
+        </div>
+        <div id="Citation" data-role="fieldcontain">
+            <label for="Citation">Citation</label>
+            <input id="Citation" name="remember" type="radio" onclick="filter('Citation')"/>
+        </div>
+        <div id="Finding" data-role="fieldcontain">
+            <label for="Finding">Finding</label>
+            <input id="Finding" name="remember" type="radio" onclick="filter('Finding')"/>
+        </div>
+        <div id="Evidence" data-role="fieldcontain">
+            <label for="Evidence">Evidence</label>
+            <input id="Evidence" name="remember" type="radio" onclick="filter('Evidence')"/>
+        </div>
+        <div id="Legal Rule" data-role="fieldcontain">
+            <label for="Legal Rule">Legal Rule</label>
+            <input id="Legal Rule" name="remember" type="radio" onclick="filter('Legal Rule')"/>
+        </div>
+        <div id="Reasoning" data-role="fieldcontain">
+            <label for="Reasoning">Reasoning</label>
+            <input id="Reasoning" name="remember" type="radio" onclick="filter('Reasoning')"/>
+        </div>
+        <div id="Sentence" data-role="fieldcontain">
+            <label for="Sentence">Sentence</label>
+            <input id="Sentence" name="remember" type="radio" onclick="filter('Sentence')"/>
+        </div>
+    </div>
+    <hr style="width:100%;text-align:left;margin-left:0">
+
+
+    <h1>Sentences</h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Sentence</th>
+            <th scope="col" data-field="date" data-filter-control="select" data-sortable="true">Class</th>
+            <th scope="col" data-field="date" data-filter-control="select" data-sortable="true">(Pseudo-) Probability
+            </th>
+        </tr>
+        </thead>
+        <tbody id="sentence_table_body">
+        <tr>
+
+        </tr>
+
+        </tbody>
+    </table>
+</div>
+
+</body>
+<script>
+    function draw_histo() {
+        histo = document.getElementById('histo');
+        var x = [];
+        var data = JSON.parse(window.localStorage.getItem('data'))
+        for (var i = 0; i < data.length; i++) {
+            x[i] = data[i].role
+        }
+        var trace = {
+            x: x,
+            type: 'histogram',
+        };
+        var data = [trace];
+        Plotly.newPlot(histo, data);
+    }
+
+    function filter(selected) {
+        var data = JSON.parse(window.localStorage.getItem('data'))
+        if (selected == "All") {
+            fillTable(data)
+        } else {
+            fillTable(data.filter(sents => sents.role == selected))
+        }
+
+    }
+
+    function fillTable(data) {
+        var tablebody = document.getElementById("sentence_table_body");
+        tablebody.innerHTML = ''
+        for (var i = 0; i < data.length; i++) {
+            var tr = document.createElement("tr");
+            tr.innerHTML = '<th scope="row">' + i + '</th>' +
+                '<td>' + data[i].sentence + '</td>' +
+                '<td>' + data[i].role + '</td>' +
+                '<td>' + data[i].prob + '</td>'
+            tablebody.appendChild(tr)
+        }
+    }
+
+    function performEval() {
+        var text = document.getElementById("document_text").value
+        var endpoint = "/doc"
+        $.ajax({
+            type: 'POST',
+            url: endpoint,
+            data: JSON.stringify({"text": text}),
+            contentType: 'application/json',
+            Accept: 'application/json',
+            cache: false,
+            processData: false,
+            success: function (data) {
+                window.localStorage.setItem('data', JSON.stringify(data))
+                fillTable(data)
+                draw_histo()
+            }
+        });
+    }
+</script>
+</html>
